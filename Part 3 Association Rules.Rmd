@@ -1,0 +1,226 @@
+---
+title: 'Part 3: Association Rules'
+author: "Brenda Bor"
+date: "2/4/2022"
+output: html_document
+---
+
+# Research Question
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+# Association Rules
+
+This section will require that you create association rules that will allow you to identify relationships between variables in the dataset. You are provided with a separate dataset that comprises groups of items that will be associated with others. Just like in the other sections, you will also be required to provide insights for your analysis.
+
+# Defining the question
+
+## i)Specifying the Data Analytic Question
+
+Create association rules that will allow you to identify relationships between variables in the dataset. You are provided with a separate dataset that comprises groups of items that will be associated with others. 
+
+## ii)Defining the Metric for Success
+
+To be able to establish relationships between items in our dataset using the apriori algorithm.
+
+## Understanding the context
+
+Association analysis is an unsupervised method that is used to discover patterns that occur within a given dataset by identifying relationships between observations and variables from a dataset.
+
+We use the apriori algorithm to build the association rules.
+
+The 3 important measure parameters of association rules include;
+
+1. Support- How popular an itemset is, as measured by the proportion of transactions in which an itemset appears
+
+2. Confidence - How often one item A appears whenever another item B appears in a transaction. This is usually a conditional probability.
+
+3. Lift- Used to measure the performance of the rule when compared against the entire data set. 
+
+Dataset link http://bit.ly/SupermarketDatasetII
+
+# IMPLEMENTING THE SOLUTION
+
+```{r}
+# We first we install the required arules library 
+#
+install.packages("arules")
+```
+
+```{r}
+# Loading the arules library
+#
+library(arules)
+```
+
+Loading our transactions dataset from our csv file
+
+```{r}
+# We will use read.transactions fuction which will load data from comma-separated files and convert them to the class transactions
+
+path <-"http://bit.ly/SupermarketDatasetII"
+df3<-read.transactions(path, sep = ",")
+df3
+
+```
+
+Verifying the object's class
+
+```{r}
+# This should show us transactions as the type of data that we will need
+class(df3)
+```
+
+```{r}
+# Previewing our first 5 transactions
+#
+inspect(df3[1:5])
+```
+Preview the first 10 items that make up our dataset
+```{r}
+# alternatively we can preview the items that make up our dataset
+items<-as.data.frame(itemLabels(df3))
+colnames(items) <- "Item"
+head(items, 10)    
+```
+Generating a summary of the sales dataset to get a sense of the most purchased items.
+
+```{r}
+#Summary
+summary(df3)
+```
+From the summary above, we can see that the most purchased item in our dataset is mineral water folloed by eggs.
+
+Exploring the absolute and relative frequency of some items from some transactions
+
+```{r}
+# transacations ranging from 8 to 10 and performing 
+itemFrequency(df3[, 8:10],type = "absolute")
+round(itemFrequency(df3[, 8:10],type = "relative")*100,2)
+```
+
+Vuzualizing the top 10 most common items in the sales dataset and the items whose relative importance is at least 5%
+
+```{r}
+
+par(mfrow = c(1, 2))
+
+# plot the frequency of items
+itemFrequencyPlot(df3, topN = 10,col="darkblue")
+itemFrequencyPlot(df3, support = 0.1,col="darkred")
+```
+From the first graph we can see that mineral water, eggs,spaghetti were the most bought items.
+
+From the seconf graph we can see that mineral water, eggs,spaghetti had the highest support
+
+## Building a model based on association rules 
+
+```{r}
+# Building a apriori model with Min Support as 0.001 and confidence as 0.7.
+rules1 <- apriori (df3, parameter = list(supp = 0.001, conf = 0.7))
+rules1
+```
+Using the minimum support as 0.001 and confidence as 0.8, we were able to attain a set of 200 rules.
+
+In order to illustrate the sensitivity of the model, we shall tune these parameters.
+
+```{r}
+# Building a apriori model with Min Support as 0.002 and confidence as 0.8.
+rules2 <- apriori (df3,parameter = list(supp = 0.002, conf = 0.8)) 
+
+# Building apriori model with Min Support as 0.002 and confidence as 0.6.
+rules3 <- apriori (df3, parameter = list(supp = 0.001, conf = 0.6)) 
+
+rules2
+
+rules3
+```
+We increased the minimum support of 0.001 to 0.002 , confidence of 0.7 to 0.8 and model rules went from 200 to only 2. This would lead us to understand that using a high level of support can make the model lose interesting rules. In the second example, we decreased the minimum confidence level to 0.6 and the number of model rules went from 200 to 545. This would mean that using a low confidence level increases the number of rules to quite an extent and many will not be useful.
+
+```{r}
+#checking the summary of the rules 1
+summary(rules1)
+```
+Preview the rules built in our first model.
+
+```{r}
+# Observing rules built in our model i.e. first 5 model rules
+inspect(rules1[1:5])
+```
+From the preview above, we can conclude ;
+
+ -If a customer buys frozen smoothie,spinach they are 88% likely to also buy mineral water as this was observed in 8 transactions within our dataset.
+
+ -If a customer buys olive oil,strong cheese, they are 72% likely to also buy spaghetti as this was observed in 10 transactions within our dataset.
+
+
+Ordering these rules by criteria such as the level of confidence, lift or support can also help us understand better the relationship between the items in our dataset and help us make more calculated decisions such as aisle placement for better sales.
+
+```{r}
+ # Ordering the rules the level of confidence then looking at the first five rules.
+rules1<-sort(rules1, by="confidence", decreasing=TRUE)
+inspect(rules1[1:5])
+```
+ 
+From the above preview, we can conclude the following :
+
+ -If a customer buys fat and tea, they are 100% likely to also buy escalope as this was observed in 35 transactions within our dataset.
+
+ -If a customer buys ground beef,light cream,olive oil, they are 100% likely to also buy mineral water as this was observed in 9 transactions within our dataset.
+
+
+```{r}
+# If we're interested in making a promotion relating to the sale of escalope, 
+# we could create a subset of rules concerning these products 
+# ---
+# This would tell us the items that the customers bought before purchasing escalope
+
+escalope <- subset(rules1, subset = rhs %pin% "escalope")
+ 
+# Then order by confidence
+escalope<-sort(escalope, by="confidence", decreasing=TRUE)
+inspect(escalope[1:2])
+```
+From the above preview, we can conclude the following :
+
+-We should market escalope to people who buy french fries,mushroom cream sauce,pasta because there is 100% chance that they will buy escalope
+
+-We should market escalope to people who buy mushroom cream sauce,pasta because there is 95% chance that they will buy escalope
+
+```{r}
+# What if we wanted to determine items that customers might buy 
+# who have previously bought milk?
+
+# Subset the rules
+milk <- subset(rules1, subset = lhs %pin% "milk")
+
+# Order by confidence
+milk<-sort(milk, by="confidence", decreasing=TRUE)
+
+# inspect top 5
+inspect(milk[1:5])
+```
+
+From the above preview, we can conclude the following :
+
+-We should market mineral water to people who buy milk because there is 90% chance that they will buy mineral water
+
+# CONCLUSIONS
+
+ -Mineral Water is the most purchased item in our dataset followed by eggs,spaghetti,  french fries and chocolate.
+ 
+ -If a customer buys pasta, we are 100% confident that they will also buy escalope as this was observed in 8 transactions within our dataset.
+ 
+ -If a customer buys cake, we are 100% confident that they will also buy wheat as this was observed in 8 transactions within our dataset.
+ 
+ -If a customer buys cake,olive oil,shrimp, they are 100% likely to also buy mineral water and greens as this was observed in 9 transactions within our dataset.
+
+# RECOMMENDATIONS
+
+ -We recommend that the supermarket should stock up on items such as eggs,spaghetti,  french fries, chocolate,mineral water, fat and yoghurt as they were the most purchased and thus will guarantee the highest number of sales.
+ 
+ -We recommend that the supermarket should consider placing rice and wheat in similar or neighboring aisles as we are 100% confident that a customer would purchase both items and thus this would reduce the time they take looking for the items separately.
+ 
+ -We recommend that cookies and youghurt should be placed in neighboring or similar aisles as a customer would be 100% likely to purchase both at the same time thus increasing the number of sales in the supermarket.
+
+
