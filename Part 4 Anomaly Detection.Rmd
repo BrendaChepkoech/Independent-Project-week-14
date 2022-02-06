@@ -1,0 +1,182 @@
+---
+title: 'Part 4: Anomaly Detection'
+author: "Brenda Bor"
+date: "2/5/2022"
+output: html_document
+---
+
+# Research Question
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you’ll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+
+# Part 4: Anomaly Detection
+
+You have also been requested to check whether there are any anomalies in the given sales dataset. The objective of this task being fraud detection.
+
+# Defining the question
+
+## i)Specifying the Data Analytic Question
+Check whether there are any anomalies in the given sales dataset. The objective of this task being fraud detection.
+
+## ii)Defining the Metric for Success
+To detect and plot any anomalies in our dataset.
+
+## iii) Understanding the Context
+The package anomalize does Time Series Anomaly Detection that goes inline with other Tidyverse packages (or packages supporting tidy data) – with one of the most used Tidyverse functionality – compatibility with the pipe %>% operator to write readable and reproducible data pipeline.
+
+Before starting with Time Series forecasting or Modelling, there is Time Series Decomposition where the Time series data is decomposed into Observed, Seasonal, Trend and Remainder components using the tidy_decompose() function. Anomalize() function performs anomaly detection on the decomposed data using the remainder column and creates 3 new columns; remainder_l1 (lower limit), remainder_l2 (upper limit) and anomaly (Yes/No Flag). The default method is method = "iqr", which is fast and relatively accurate at detecting anomalies. We then create the lower and upper bounds around the observed values through the use of the time_recompose() function which recomposes the lower and upper bounds of the anomalies around the observed values and creates new columns: recomposed_l1 (lower limit) and recomposed_l2 (upper limit).
+
+# IMPLEMENTING THE SOLUTION
+
+First we install and load the required packages.
+
+```{r}
+local({r <- getOption("repos"); r["CRAN"] <- "https://cran.r-project.org/"; options(repos = r)})
+```
+
+```{r}
+library(anomalize) # tidy anomaly detectiom
+```
+
+```{r}
+update.packages("tidyverse")
+library(tidyverse) # tidyverse packages like dplyr, ggplot, tidyr
+```
+
+```{r}
+library(tibble)
+library(tibbletime) # time series data
+```
+
+```{r}
+library(data.table)
+```
+
+```{r}
+library(dplyr)
+```
+
+We load the dataset into our environment.
+
+```{r}
+df4<- read.csv("http://bit.ly/CarreFourSalesDataset")
+#Lets preview the head
+head(df4)
+```
+Lets preview the tail
+
+```{r}
+tail(df4)
+```
+
+Check the dimensions of the dataset.
+```{r}
+dim(df4)
+```
+We have 1000 rows and 2 columns
+
+Check for missing values in our dataset.
+
+```{r}
+colSums(is.na(df4))
+```
+There are no null values
+
+Checking the datatypes
+
+```{r}
+#data structure
+str(df4)
+```
+
+ Our date column is character type. We will change to datetime type
+ 
+```{r}
+df4$Date <- as.Date(df4$Date, format = "%m/%d/%Y")
+df4$Date <- sort(df4$Date, decreasing = FALSE)
+```
+
+```{r}
+#data structure
+str(df4)
+```
+
+Convert the sales into a tibbletime object.
+
+```{r}
+library(timetk)
+```
+
+```{r}
+df4$Date <- as.POSIXct(df4$Date)
+```
+
+```{r}
+library(tibble)
+library(tibbletime) # time series data
+```
+
+```{r}
+update.packages("ggplot2")
+library(ggplot2)
+```
+
+```{r}
+df4 <- as_tibble(df4)
+```
+
+## Anomaly Detection.
+
+The R ‘anomalize’ package enables a workflow for detecting anomalies in data. The main functions are:
+
+ - time_decompose()- for time series decomposition
+ 
+ - anomalize()- for Anomaly detection of remainder
+ 
+ - time_recompose()- for Anomaly lower and upper bound transformation
+
+## Decomposing
+
+```{r}
+df4 %>%
+time_decompose(Sales, method = 'stl', frequency = 'auto', trend = 'auto') %>%
+anomalize(remainder, method = 'gesd', alpha = 0.1, max_anoms = 0.5) %>%
+plot_anomaly_decomposition(ncol = 3, alpha_dots = 0.7)
+```
+
+## Recomposing
+
+ -The time_recompose() function is used to generate bands around the normal levels of observed values
+ 
+```{r}
+df4 %>%
+time_decompose(Sales, method = 'stl', frequency = 'auto', trend = 'auto') %>%
+anomalize(remainder, method = 'gesd', alpha = 0.1, max_anoms = 0.1) %>%
+time_recompose() %>%
+plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
+```
+
+
+We can actually go ahead to determine the exact dates that had anomalies in our dataset.
+
+```{r}
+anomalies = df4 %>%
+time_decompose(Sales, method = 'stl', frequency = 'auto', trend = 'auto') %>%
+anomalize(remainder, method = 'gesd', alpha = 0.05, max_anoms = 0.1) %>%
+time_recompose() %>%
+filter(anomaly == 'Yes')
+
+anomalies
+```
+There are annomalies in the carrefour dataset
+
+# CONCLUSION
+
+There were more than 10 anomalies in the month of Feruary and March
+
+#RECOMMENDATIONS
+
+We would recommend that the supermarket reviews their February and march sales so as to investigate why there were anomalies between the 6th of February and 30th of March so as to further understand the trend and seasonality in their sales.
+
+
