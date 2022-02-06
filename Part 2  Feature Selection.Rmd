@@ -1,0 +1,272 @@
+---
+title: 'Part 2: Feature Selection'
+author: "Brenda Bor"
+date: "2/6/2022"
+output: html_document
+---
+
+# Research Question
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you’ll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+# Part 2: Feature Selection
+
+This section requires you to perform feature selection through the use of the unsupervised learning methods learned earlier this week. You will be required to perform your analysis and provide insights on the features that contribute the most information to the dataset.
+
+# Defining the question
+
+## i)Specifying the Data Analytic Question
+Perform feature selection through the use of the unsupervised learning methods.
+
+## ii)Defining the Metric for Success
+Being able to Perform feature selection
+
+## iii) Understanding the Context
+
+This section requires you to perform feature selection through the use of the unsupervised learning methods learned earlier this week. You will be required to perform your analysis and provide insights on the features that contribute the most information to the dataset.
+
+Dataset link http://bit.ly/CarreFourDataset
+
+# IMPLEMENTING THE SOLUTION
+
+First we load the dataset into our environment.
+
+```{r}
+df2<-read.csv('http://bit.ly/CarreFourDataset')
+
+#Lets preview the head
+head(df2)
+```
+Preview the bottom 5 records in our dataset.
+
+```{r}
+tail(df2)
+```
+```{r}
+colSums(is.na(df2))
+```
+There are no null values on our dataset
+
+Check for duplicate values.
+
+```{r}
+duplicated_rows <- df2[duplicated(df2),]
+duplicated_rows
+```
+We can also conclude that there are no duplicated values in our dataset.
+
+Selecting the numerical data from our dataset.
+```{r}
+New_df2 <- df2[,c(6,7,8,12,14:16)]
+head(New_df2)
+```
+# EXPLORATORY DATA ANALYSIS
+
+Univariate Data Analysis
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+# Mean 
+df2 %>% summarise_if(is.numeric, mean)
+
+```
+```{r}
+# Median
+df2 %>% summarise_if(is.numeric, median)
+```
+
+
+```{r}
+# Mode 
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}  
+df2 %>% summarise_if(is.numeric, getmode)
+
+```
+```{r}
+# Range
+df2 %>% summarise_if(is.numeric, range)
+```
+
+```{r}
+# Quantiles
+df2 %>% summarise_if(is.numeric, quantile)
+
+```
+```{r}
+# Standard Deviation 
+df2 %>% summarise_if(is.numeric, sd)
+```
+```{r}
+# Variance 
+df2 %>% summarise_if(is.numeric, var)
+```
+Checking Outliers
+
+```{r}
+boxplot(df2$Unit.price)
+```
+
+```{r}
+boxplot(df2$Quantity)
+```
+
+```{r}
+boxplot(df2$Tax)
+```
+
+```{r}
+boxplot.stats(df2$Tax)$out
+```
+```{r}
+boxplot(df2$cogs)
+```
+
+```{r}
+boxplot.stats(df2$cogs)$out
+```
+```{r}
+boxplot(df2$gross.margin.percentage)
+```
+
+```{r}
+boxplot(df2$gross.income)
+```
+
+```{r}
+boxplot(df2$Rating)
+```
+
+```{r}
+boxplot(df2$Total)
+```
+
+```{r}
+boxplot(df2$Total)$out
+```
+
+# IMPLEMENTING THE SOLUTION
+
+# Feature Selection
+
+This section requires you to perform feature selection through the use of the unsupervised learning methods learned earlier this week. You will be required to perform your analysis and provide insights on the features that contribute the most information to the dataset.
+
+## i) Filter Method
+
+First install the required packages and load their libraries.
+
+```{r}
+library(caret)
+library(caretEnsemble)
+```
+
+```{r}
+library(corrplot)
+```
+
+Calculate the correlation matrix in our numerical variables in our dataset
+
+```{r}
+correlationMatrix <- cor(New_df2)
+
+```
+
+In order to find the highly correlated attributes, we can set a cutoff value at 0.75% and find the correlation.
+
+```{r}
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
+names(New_df2[,highlyCorrelated])
+
+```
+
+Using the filter method for feature selection, we can conclude that the attributes 'cogs' and 'tax' are highly correlated/redundant and thus should be removed from the subset of features in our dataset.
+
+```{r}
+# Removing Redundant Features 
+# ---
+# 
+s <- New_df2[-highlyCorrelated]
+
+# Performing our graphical comparison
+# ---
+# 
+par(mfrow = c(1, 2))
+corrplot(correlationMatrix, order = "hclust")
+```
+
+```{r}
+# Without redundant features
+corrplot(cor(s), order = "hclust")
+```
+
+From the correlogram above we can see that there are no highly correlated variables.
+
+Using the filter method, we can establish that the important features are :
+
+1. Unit Price of the items
+
+2. Quantity of items purchased
+
+3. Gross Income
+
+4. Rating of items
+
+
+
+## ii) Embedded Methods
+
+First we load the wskm library.
+
+```{r}
+library(wskm)
+```
+
+```{r}
+library(cluster)
+```
+
+```{r}
+set.seed(2)
+model <- ewkm(New_df2, 3, lambda=2, maxiter=1000)
+```
+
+```{r}
+# Cluster Plot against 1st 2 principal components
+# ---
+#
+clusplot(New_df2, model$cluster, color=TRUE, shade=TRUE,
+         labels=2, lines=1,main='Cluster Analysis for Supermarket')
+```
+
+```{r}
+# Weights are calculated for each variable and cluster. 
+# They are a measure of the relative importance of each variable 
+# with regards to the membership of the observations to that cluster. 
+# The weights are incorporated into the distance function, 
+# typically reducing the distance for more important variables.
+# Weights remain stored in the model and we can check them as follows:
+# 
+round(model$weights*100,2)
+```
+
+
+# CONCLUSION
+
+The important features in our dataset that will bring the highest number of sales are ;
+
+1. Unit Price of the items in the supermarkets.
+
+2. Gross Income
+
+3. Quantity of items purchased
+
+4. Rating of the items in the supermarkets.
+
+
+
+
