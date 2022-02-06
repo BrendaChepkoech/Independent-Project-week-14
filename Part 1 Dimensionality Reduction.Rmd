@@ -184,13 +184,13 @@ install_github("vqv/ggbiplot",force = TRUE)
 ```
 
 ```{r}
-#library(ggbiplot)
+library(ggbiplot)
 ```
 
 Plot the Newdf.pca object.
 
 ```{r}
-#ggbiplot(New_df1.pca)
+ggbiplot(New_df1.pca)
 ```
 
 # CONCLUSION
