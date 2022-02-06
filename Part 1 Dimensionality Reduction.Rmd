@@ -1,0 +1,201 @@
+---
+title: 'Part 1: Dimensionality Reduction'
+author: "Brenda Bor"
+date: "2/6/2022"
+output: html_document
+---
+
+# Research Question
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you’ll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+
+# Part 1: Dimensionality Reduction
+
+This section of the project entails reducing your dataset to a low dimensional dataset using the t-SNE algorithm or PCA. You will be required to perform your analysis and provide insights gained from your analysis.
+
+# Defining the question
+
+## i)Specifying the Data Analytic Question
+Reduce your dataset to a low dimensional dataset using the t-SNE algorithm or PCA.
+
+## ii)Defining the Metric for Success
+Reduce your dataset to a low dimensional dataset.
+
+## iii) Understanding the Context
+
+This section of the project entails reducing your dataset to a low dimensional dataset using the t-SNE algorithm or PCA. You will be required to perform your analysis and provide insights gained from your analysis.
+
+Dataset link http://bit.ly/CarreFourDataset
+
+# IMPLEMENTING THE SOLUTION
+
+First we load the dataset into our environment.
+
+```{r}
+df1<-read.csv("http://bit.ly/CarreFourDataset")
+
+#Lets preview the head
+head(df1)
+```
+Preview the bottom 5 records in our dataset..
+```{r}
+tail(df1)
+```
+Check for null/missing values.
+
+```{r}
+colSums(is.na(df1))
+```
+There are no null values on our dataset
+
+Check for duplicate values.
+
+```{r}
+duplicated_rows <- df1[duplicated(df1),]
+duplicated_rows
+```
+
+We can also conclude that there are no duplicated values in our dataset.
+
+Selecting the numerical data from our dataset.
+```{r}
+New_df1 <- df1[,c(6,7,8,12,14:16)]
+head(New_df1)
+```
+# EXPLORATORY DATA ANALYSIS
+
+Univariate Data Analysis
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+# Mean 
+df1 %>% summarise_if(is.numeric, mean)
+
+```
+```{r}
+# Median
+df1 %>% summarise_if(is.numeric, median)
+```
+```{r}
+# Mode 
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}  
+df1 %>% summarise_if(is.numeric, getmode)
+
+```
+```{r}
+# Range
+df1 %>% summarise_if(is.numeric, range)
+```
+```{r}
+# Quantiles
+df1 %>% summarise_if(is.numeric, quantile)
+
+```
+```{r}
+# Standard Deviation 
+df1 %>% summarise_if(is.numeric, sd)
+```
+```{r}
+# Variance 
+df1 %>% summarise_if(is.numeric, var)
+```
+Checking Outliers
+
+```{r}
+boxplot(df1$Unit.price)
+```
+
+```{r}
+boxplot(df1$Quantity)
+```
+
+
+```{r}
+boxplot(df1$Tax)
+```
+```{r}
+boxplot.stats(df1$Tax)$out
+```
+```{r}
+boxplot(df1$cogs)
+```
+```{r}
+boxplot.stats(df1$cogs)$out
+```
+```{r}
+boxplot(df1$gross.margin.percentage)
+```
+
+```{r}
+boxplot(df1$gross.income)
+```
+
+```{r}
+boxplot(df1$Rating)
+```
+
+```{r}
+boxplot(df1$Total)
+```
+
+```{r}
+boxplot(df1$Total)$out
+```
+# IMPLEMENTING THE SOLUTION
+
+This section of the project entails reducing your dataset to a low dimensional dataset using the t-SNE algorithm or PCA. You will be required to perform your analysis and provide insights gained from your analysis.
+
+Use the prcomp() function to get the principal components in our dataset.
+
+```{r}
+New_df1.pca <- prcomp(New_df1, center = TRUE, scale. = TRUE)
+summary(New_df1.pca)
+```
+
+We have obtained 7 principal components and can observe the following ;
+
+PC1, PC2 and PC3 account for 98.71% percent of the total variation in the dataset which means that majority of the information in our dataset has been captured using just the 3 principal components.
+
+PC1 accounts for 70.31% of the total variation in the dataset while PC2 accounts for 14.29% thus we can draw some valuable information and insights by just plotting the 2 principal components.
+
+First we can have a look at our New_df1.pca object with the aim of understanding its dimensions and components.
+
+```{r}
+str(New_df1.pca)
+```
+For plotting purposes, we will begin by installing the ggbiplot package which will assist us in visualization of the pca object.
+
+```{r}
+# Installing our ggbiplot visualisation and devtools packages
+# then loading the libraries
+library(devtools)
+```
+
+```{r}
+install_github("vqv/ggbiplot",force = TRUE)
+
+```
+
+```{r}
+#library(ggbiplot)
+```
+
+Plot the Newdf.pca object.
+
+```{r}
+#ggbiplot(New_df1.pca)
+```
+
+# CONCLUSION
+
+The first 3 principal components account for 84.6% of the total variation in the dataset thus meaning that majority of the information in our dataset has been captured using just the 3 principal components.
+
+PC1 accounts for 70.31% of the total variation in the dataset while PC2 accounts for 14.29% thus we can draw some valuable information and insights by just plotting the 2 principal components.
+
